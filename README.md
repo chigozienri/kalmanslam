@@ -6,3 +6,5 @@ You can try to fix this by using sensors on your robot which can give updates ab
 A Kalman Filter is one common way of working out how much to trust your model of where you are vs where your sensors are telling you you are. It can be extended to solve the problem of Simultaneous Localization and Mapping (SLAM), building a map of the environment while also working out your position in it.
 
 This is a playground which has a robot which knows the distances to various obstacles using a laser. It is intended to try out Kalman Filtering algorithms.
+
+Try at https://chigozienri.github.io/kalmanslam/
