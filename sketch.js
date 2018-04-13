@@ -1,4 +1,5 @@
 let obstacles = [];
+let beacons = [];
 function setup() {
 	createCanvas(windowWidth, windowHeight);
 	rectMode(CENTER);
@@ -19,12 +20,17 @@ function setup() {
 		if ( ! obstacle.intersects) {
 				obstacles.push(obstacle);
 		}
-
+	}
+	for (let i=0; i<3; i++) {
+		let beacon = new Beacon(random(30, windowWidth - 30), random(30, windowHeight - 30));
+		beacons.push(beacon);
 	}
 
 	rot = true;
 	pnoise = true;
 	mnoise = true;
+	viewobstacles = true;
+	viewbeacons = true;
 }
 
 function draw() {
@@ -34,16 +40,28 @@ function draw() {
 	fill(255);
 	stroke(0);
 	strokeWeight(1);
-	text('Press space to toggle rotation / brake', 40, 40);
-	text('Press p to toggle process noise (gaussian, sd 1)', 40, 55);
-	text('Press m to toggle measurement noise (gaussian, sd 5)', 40, 70);
-	text('Press arrows to add force', 40, 85);
+	text(`Press space to toggle rotation / brake`, 40, 40);
+	text(`Press p to toggle process noise (gaussian, sd 1) (${pnoise})`, 40, 55);
+	text(`Press m to toggle measurement noise (gaussian, sd 5) (${mnoise})`, 40, 70);
+	text(`Press o to toggle obstacles (${viewobstacles})`, 40, 85);
+	text(`Press b to toggle beacons (${viewbeacons})`, 40, 100);
+	text(`Press arrows to add force`, 40, 115);
 
 
-	for (let obstacle of obstacles) {
-		obstacle.show();
-		obstacle.changeColor(255);
+  if (viewobstacles) {
+		for (let obstacle of obstacles) {
+			obstacle.show();
+			obstacle.changeColor(255);
+		}
 	}
+
+	if (viewbeacons) {
+		for (let beacon of beacons) {
+			beacon.show();
+		}
+	}
+
+
 	robot.move();
 
 	// Add process noise
@@ -74,6 +92,12 @@ function keyTyped() {
 	}
 	if (key == 'm') {
 		mnoise = !mnoise;
+	}
+	if (key == 'o') {
+		viewobstacles = !viewobstacles;
+	}
+	if (key == 'b') {
+		viewbeacons = !viewbeacons;
 	}
 }
 
@@ -108,21 +132,27 @@ class Obstacle {
 	burn(x_,y_, color_) {
 		this.color = color_;
 		fill(this.color);
+		strokeWeight(0);
 		ellipse(x_,y_,10,10);
 	}
 }
-// class Boundary {
-// 	constructor() {
-// 		this.pos = createVector(windowWidth/2,windowHeight/2);
-// 		this.size = createVector(windowWidth-20,windowHeight-20);
-// 	}
-// 	show() {
-// 		strokeWeight(5);
-// 		stroke(255,0,0);
-// 		noFill();
-// 		rect(this.pos.x,this.pos.y,this.size.x,this.size.y);
-// 	}
-// }
+
+class Beacon {
+	constructor(x_,y_) {
+		this.pos = createVector(x_,y_);
+		}
+
+	show() {
+		strokeWeight(0);
+		fill(255,255,0);
+		rectMode(CENTER)
+		ellipse(this.pos.x,this.pos.y,10,10);
+
+		stroke(255,255,0);
+		strokeWeight(1);
+		line(this.pos.x,this.pos.y,robot.pos.x,robot.pos.y)
+	}
+}
 
 class Laser {
 	constructor(parentrobot_,theta_) {
@@ -223,6 +253,13 @@ class Robot {
 		this.lasers.push(new Laser(this, PI));
 		this.lasers.push(new Laser(this, 7*PI/4));
 		this.lasers.push(new Laser(this, PI/4));
+
+		// Set up beacon distances
+		this.beacondistances = [];
+		for (beacon of beacons) {
+			d = sqrt(beacon.pos.x**2 + beacon.pos.y**2);
+			this.beacondistances.push(d);
+		}
 	}
 
 	move() {
@@ -257,6 +294,13 @@ class Robot {
 
 		// check for collisions
 		this.collide();
+
+		//Update beacondistances
+		this.beacondistances = [];
+		for (let beacon of beacons) {
+			let d = sqrt(beacon.pos.x**2 + beacon.pos.y**2);
+			this.beacondistances.push(d);
+		}
 	}
 
 	addpnoise() {
